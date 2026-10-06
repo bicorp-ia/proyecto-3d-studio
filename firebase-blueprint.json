@@ -1,0 +1,257 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and enterprise B2B account details",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Authentication UID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User full name"
+        },
+        "companyName": {
+          "type": "string",
+          "description": "Company or enterprise name"
+        },
+        "vatId": {
+          "type": "string",
+          "description": "Tax Identification / CIF"
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["Standard", "Silver", "Gold", "Partner"],
+          "description": "B2B Loyalty Tier"
+        },
+        "totalSpent": {
+          "type": "number",
+          "description": "Cumulative spending in EUR"
+        },
+        "ordersCount": {
+          "type": "number",
+          "description": "Total completed orders count"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile creation timestamp"
+        }
+      },
+      "required": ["userId", "email", "createdAt"]
+    },
+    "Quote": {
+      "title": "Quote",
+      "description": "Saved 3D fabrication quotation record",
+      "type": "object",
+      "properties": {
+        "quoteId": {
+          "type": "string",
+          "description": "Formal Quote identifier code"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Author UID"
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Client contact person"
+        },
+        "clientEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Client email"
+        },
+        "clientCompany": {
+          "type": "string",
+          "description": "Company name"
+        },
+        "projectName": {
+          "type": "string",
+          "description": "Project or CAD file name"
+        },
+        "technology": {
+          "type": "string",
+          "enum": ["fdm", "sla", "sls", "cnc"],
+          "description": "Selected manufacturing technology"
+        },
+        "materialId": {
+          "type": "string",
+          "description": "Material identifier"
+        },
+        "materialName": {
+          "type": "string",
+          "description": "Material name"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Number of units"
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "Calculated unit price in EUR"
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Subtotal before VAT in EUR"
+        },
+        "taxVat": {
+          "type": "number",
+          "description": "VAT tax in EUR"
+        },
+        "total": {
+          "type": "number",
+          "description": "Total amount in EUR"
+        },
+        "volumeCm3": {
+          "type": "number",
+          "description": "Model volume in cm³"
+        },
+        "weightGrams": {
+          "type": "number",
+          "description": "Calculated weight in grams"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["quoteId", "userId", "total", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Production manufacturing order record",
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "description": "Production Order identifier"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Customer UID"
+        },
+        "projectName": {
+          "type": "string",
+          "description": "Project title"
+        },
+        "technology": {
+          "type": "string",
+          "enum": ["fdm", "sla", "sls", "cnc"],
+          "description": "Manufacturing technology"
+        },
+        "materialName": {
+          "type": "string",
+          "description": "Material used"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Batch quantity"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["CAD_VERIFIED", "SLICING_QUEUE", "PRINTING", "POST_PROCESSING", "QC_PASSED", "SHIPPED"],
+          "description": "MES Production state"
+        },
+        "progressPercent": {
+          "type": "number",
+          "description": "Production progress (0 to 100)"
+        },
+        "total": {
+          "type": "number",
+          "description": "Order total in EUR"
+        },
+        "trackingNumber": {
+          "type": "string",
+          "description": "Carrier tracking number"
+        },
+        "estimatedDelivery": {
+          "type": "string",
+          "description": "Estimated delivery date / SLA"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Order placement timestamp"
+        }
+      },
+      "required": ["orderId", "userId", "status", "total", "createdAt"]
+    },
+    "Meeting": {
+      "title": "Meeting",
+      "description": "Technical engineering consultation appointment",
+      "type": "object",
+      "properties": {
+        "meetingId": {
+          "type": "string",
+          "description": "Meeting reference code"
+        },
+        "userId": {
+          "type": "string",
+          "description": "User UID if signed in"
+        },
+        "name": {
+          "type": "string",
+          "description": "Attendee full name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Attendee corporate email"
+        },
+        "company": {
+          "type": "string",
+          "description": "Enterprise company name"
+        },
+        "date": {
+          "type": "string",
+          "description": "Appointment date (YYYY-MM-DD)"
+        },
+        "time": {
+          "type": "string",
+          "description": "Scheduled time (e.g. 11:00)"
+        },
+        "topic": {
+          "type": "string",
+          "description": "Technical consultation subject"
+        },
+        "projectDetails": {
+          "type": "string",
+          "description": "Technical requirements notes"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["meetingId", "name", "email", "date", "time", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and enterprise account details"
+    },
+    "/users/{userId}/quotes/{quoteId}": {
+      "schema": "Quote",
+      "description": "User's saved formal 3D quotations"
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": "Order",
+      "description": "User's production orders and live manufacturing progress"
+    },
+    "/meetings/{meetingId}": {
+      "schema": "Meeting",
+      "description": "Booked technical engineering consultation sessions"
+    }
+  }
+}

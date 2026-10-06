@@ -1,0 +1,128 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validators
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email', 'createdAt']) &&
+        data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+        data.email is string && data.email.size() <= 128 &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128)) &&
+        (!('companyName' in data) || (data.companyName is string && data.companyName.size() <= 128)) &&
+        (!('vatId' in data) || (data.vatId is string && data.vatId.size() <= 64)) &&
+        (!('tier' in data) || (data.tier in ['Standard', 'Silver', 'Gold', 'Partner'])) &&
+        (!('totalSpent' in data) || (data.totalSpent is number && data.totalSpent >= 0)) &&
+        (!('ordersCount' in data) || (data.ordersCount is number && data.ordersCount >= 0)) &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidQuote(data, userId) {
+      return data.keys().hasAll(['quoteId', 'userId', 'total', 'createdAt']) &&
+        data.quoteId is string && data.quoteId.size() <= 128 &&
+        data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+        data.total is number && data.total >= 0 &&
+        (!('projectName' in data) || (data.projectName is string && data.projectName.size() <= 200)) &&
+        (!('technology' in data) || (data.technology in ['fdm', 'sla', 'sls', 'cnc'])) &&
+        (!('materialId' in data) || (data.materialId is string && data.materialId.size() <= 64)) &&
+        (!('quantity' in data) || (data.quantity is number && data.quantity >= 1)) &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidOrder(data, userId) {
+      return data.keys().hasAll(['orderId', 'userId', 'status', 'total', 'createdAt']) &&
+        data.orderId is string && data.orderId.size() <= 128 &&
+        data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+        data.status in ['CAD_VERIFIED', 'SLICING_QUEUE', 'PRINTING', 'POST_PROCESSING', 'QC_PASSED', 'SHIPPED'] &&
+        data.total is number && data.total >= 0 &&
+        (!('projectName' in data) || (data.projectName is string && data.projectName.size() <= 200)) &&
+        (!('technology' in data) || (data.technology in ['fdm', 'sla', 'sls', 'cnc'])) &&
+        (!('materialName' in data) || (data.materialName is string && data.materialName.size() <= 128)) &&
+        (!('quantity' in data) || (data.quantity is number && data.quantity >= 1)) &&
+        (!('progressPercent' in data) || (data.progressPercent is number && data.progressPercent >= 0 && data.progressPercent <= 100)) &&
+        (!('trackingNumber' in data) || (data.trackingNumber is string && data.trackingNumber.size() <= 128)) &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidMeeting(data) {
+      return data.keys().hasAll(['meetingId', 'name', 'email', 'date', 'time', 'createdAt']) &&
+        data.meetingId is string && data.meetingId.size() <= 128 &&
+        data.name is string && data.name.size() <= 128 &&
+        data.email is string && data.email.size() <= 128 &&
+        data.date is string && data.date.size() <= 32 &&
+        data.time is string && data.time.size() <= 32 &&
+        (!('company' in data) || (data.company is string && data.company.size() <= 128)) &&
+        (!('topic' in data) || (data.topic is string && data.topic.size() <= 256)) &&
+        (!('projectDetails' in data) || (data.projectDetails is string && data.projectDetails.size() <= 1000)) &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // PII protection: no listing users
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Subcollection: Quotes
+      match /quotes/{quoteId} {
+        allow get: if isOwner(userId) && isValidId(quoteId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(quoteId) && isValidQuote(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(quoteId) && isValidQuote(incoming(), userId) &&
+          incoming().quoteId == existing().quoteId &&
+          incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId) && isValidId(quoteId);
+      }
+
+      // Subcollection: Orders
+      match /orders/{orderId} {
+        allow get: if isOwner(userId) && isValidId(orderId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(orderId) && isValidOrder(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(orderId) && isValidOrder(incoming(), userId) &&
+          incoming().orderId == existing().orderId &&
+          incoming().createdAt == existing().createdAt;
+        allow delete: if false; // Production orders cannot be deleted by clients
+      }
+    }
+
+    // Public/Client Engineering Consultation Meetings
+    match /meetings/{meetingId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.email == request.auth.token.email);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isValidId(meetingId) && isValidMeeting(incoming());
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

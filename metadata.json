@@ -1,0 +1,6 @@
+{
+  "name": "Proyect3d - Plataforma Industrial & Cotizador 3D Avanzado",
+  "description": "Plataforma industrial para ingeniería y fabricación 3D avanzada. Visor 3D interactivo, auto-reparación de malla, motor de cotización dinámica con DFAM, portal B2B y asistente técnico con IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
